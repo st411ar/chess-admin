@@ -34,13 +34,13 @@ async function loadData() {
     }
 }
 
-function escapeHtml(value) {
-    return String(value)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
+function createActionButton(text, className, handler) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = text;
+    button.className = `action-button ${className}`.trim();
+    button.addEventListener('click', handler);
+    return button;
 }
 
 function renderPlayers() {
@@ -48,15 +48,22 @@ function renderPlayers() {
     tbody.innerHTML = '';
 
     for (const player of players) {
-        tbody.insertAdjacentHTML(
-            'beforeend',
-            `
-            <tr>
-                <td>${escapeHtml(player.id)}</td>
-                <td>${escapeHtml(player.name)}</td>
-            </tr>
-            `
+        const row = document.createElement('tr');
+        const idCell = document.createElement('td');
+        const nameCell = document.createElement('td');
+        const actionsCell = document.createElement('td');
+
+        idCell.textContent = player.id;
+        nameCell.textContent = player.name;
+        actionsCell.className = 'actions';
+
+        actionsCell.append(
+            createActionButton('Редактировать', '', () => editPlayer(player)),
+            createActionButton('Удалить', 'delete-button', () => deletePlayer(player))
         );
+
+        row.append(idCell, nameCell, actionsCell);
+        tbody.appendChild(row);
     }
 }
 
@@ -65,31 +72,32 @@ function renderTournaments() {
     tbody.innerHTML = '';
 
     for (const tournament of tournaments) {
-        tbody.insertAdjacentHTML(
-            'beforeend',
-            `
-            <tr>
-                <td>${escapeHtml(tournament.id)}</td>
-                <td>${escapeHtml(tournament.name)}</td>
-            </tr>
-            `
+        const row = document.createElement('tr');
+        const idCell = document.createElement('td');
+        const nameCell = document.createElement('td');
+        const actionsCell = document.createElement('td');
+
+        idCell.textContent = tournament.id;
+        nameCell.textContent = tournament.name;
+        actionsCell.className = 'actions';
+
+        actionsCell.append(
+            createActionButton('Редактировать', '', () => editTournament(tournament)),
+            createActionButton('Удалить', 'delete-button', () => deleteTournament(tournament))
         );
+
+        row.append(idCell, nameCell, actionsCell);
+        tbody.appendChild(row);
     }
 }
 
 function getPlayerName(playerId) {
-    const player = players.find(
-        item => item.id === playerId
-    );
-
+    const player = players.find(item => item.id === playerId);
     return player ? player.name : playerId;
 }
 
 function getTournamentName(tournamentId) {
-    const tournament = tournaments.find(
-        item => item.id === tournamentId
-    );
-
+    const tournament = tournaments.find(item => item.id === tournamentId);
     return tournament ? tournament.name : tournamentId;
 }
 
@@ -98,46 +106,51 @@ function renderResults() {
     container.innerHTML = '';
 
     if (results.length === 0) {
-        container.innerHTML = '<p class="empty-message">Результатов пока нет.</p>';
+        const message = document.createElement('p');
+        message.className = 'empty-message';
+        message.textContent = 'Результатов пока нет.';
+        container.appendChild(message);
         return;
     }
 
     for (const result of results) {
-        const playersHtml = result.players
-            .map(player => `
-                <li>
-                    ${escapeHtml(getPlayerName(player.playerId))}
-                    —
-                    ${escapeHtml(player.result)}
-                </li>
-            `)
-            .join('');
+        const card = document.createElement('div');
+        const heading = document.createElement('h3');
+        const list = document.createElement('ul');
+        const actions = document.createElement('div');
 
-        container.insertAdjacentHTML(
-            'beforeend',
-            `
-            <div class="result-card">
-                <h3>
-                    ${escapeHtml(getTournamentName(result.tournamentId))}
-                    (${escapeHtml(result.year)})
-                </h3>
-                <ul>${playersHtml}</ul>
-            </div>
-            `
+        card.className = 'result-card';
+        heading.textContent = `${getTournamentName(result.tournamentId)} (${result.year})`;
+        actions.className = 'actions';
+
+        for (const playerResult of result.players) {
+            const item = document.createElement('li');
+            item.textContent = `${getPlayerName(playerResult.playerId)} — ${playerResult.result}`;
+            list.appendChild(item);
+        }
+
+        actions.append(
+            createActionButton('Редактировать', '', () => editResult(result)),
+            createActionButton('Удалить', 'delete-button', () => deleteResult(result))
         );
+
+        card.append(heading, list, actions);
+        container.appendChild(card);
     }
 }
 
 function renderResultForm() {
     const tournamentSelect = document.getElementById('resultTournamentId');
     const playersContainer = document.getElementById('resultPlayersFields');
-
     const selectedTournamentId = tournamentSelect.value;
 
     tournamentSelect.innerHTML = '';
 
     if (tournaments.length === 0) {
-        tournamentSelect.innerHTML = '<option value="">Сначала добавьте турнир</option>';
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'Сначала добавьте турнир';
+        tournamentSelect.appendChild(option);
         tournamentSelect.disabled = true;
     }
     else {
@@ -158,19 +171,21 @@ function renderResultForm() {
     playersContainer.innerHTML = '';
 
     if (players.length === 0) {
-        playersContainer.innerHTML = '<p class="empty-message">Сначала добавьте игроков.</p>';
+        const message = document.createElement('p');
+        message.className = 'empty-message';
+        message.textContent = 'Сначала добавьте игроков.';
+        playersContainer.appendChild(message);
         return;
     }
 
     for (const player of players) {
         const row = document.createElement('div');
-        row.className = 'player-result-row';
-
         const label = document.createElement('label');
+        const input = document.createElement('input');
+
+        row.className = 'player-result-row';
         label.htmlFor = `result-player-${player.id}`;
         label.textContent = player.name;
-
-        const input = document.createElement('input');
         input.id = `result-player-${player.id}`;
         input.type = 'text';
         input.placeholder = 'Место или результат';
@@ -184,7 +199,6 @@ function renderResultForm() {
 async function addPlayer() {
     const idInput = document.getElementById('playerId');
     const nameInput = document.getElementById('playerName');
-
     const id = idInput.value.trim();
     const name = nameInput.value.trim();
 
@@ -196,15 +210,12 @@ async function addPlayer() {
     try {
         await apiRequest('/players', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id, name })
         });
 
         idInput.value = '';
         nameInput.value = '';
-
         await loadData();
     }
     catch (error) {
@@ -215,7 +226,6 @@ async function addPlayer() {
 async function addTournament() {
     const idInput = document.getElementById('tournamentId');
     const nameInput = document.getElementById('tournamentName');
-
     const id = idInput.value.trim();
     const name = nameInput.value.trim();
 
@@ -227,15 +237,12 @@ async function addTournament() {
     try {
         await apiRequest('/tournaments', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id, name })
         });
 
         idInput.value = '';
         nameInput.value = '';
-
         await loadData();
     }
     catch (error) {
@@ -243,19 +250,8 @@ async function addTournament() {
     }
 }
 
-async function addResult() {
-    const tournamentId = document
-        .getElementById('resultTournamentId')
-        .value;
-
-    const yearValue = document
-        .getElementById('resultYear')
-        .value
-        .trim();
-
-    const year = Number(yearValue);
-
-    const playerResults = [...document.querySelectorAll(
+function collectResultPlayers() {
+    return [...document.querySelectorAll(
         '#resultPlayersFields input[data-player-id]'
     )]
         .map(input => ({
@@ -263,6 +259,13 @@ async function addResult() {
             result: input.value.trim()
         }))
         .filter(item => item.result !== '');
+}
+
+async function addResult() {
+    const tournamentId = document.getElementById('resultTournamentId').value;
+    const yearValue = document.getElementById('resultYear').value.trim();
+    const year = Number(yearValue);
+    const playerResults = collectResultPlayers();
 
     if (!tournamentId) {
         alert('Выберите турнир.');
@@ -282,9 +285,7 @@ async function addResult() {
     try {
         await apiRequest('/results', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 tournamentId,
                 year,
@@ -293,12 +294,169 @@ async function addResult() {
         });
 
         document.getElementById('resultYear').value = '';
+        await loadData();
+    }
+    catch (error) {
+        alert(error.message);
+    }
+}
 
-        for (const input of document.querySelectorAll(
-            '#resultPlayersFields input[data-player-id]'
-        )) {
-            input.value = '';
+async function editPlayer(player) {
+    const name = prompt('Новое имя игрока:', player.name);
+
+    if (name === null) {
+        return;
+    }
+
+    const trimmedName = name.trim();
+
+    if (!trimmedName) {
+        alert('Имя игрока не может быть пустым.');
+        return;
+    }
+
+    try {
+        await apiRequest(`/players/${encodeURIComponent(player.id)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: trimmedName })
+        });
+
+        await loadData();
+    }
+    catch (error) {
+        alert(error.message);
+    }
+}
+
+async function deletePlayer(player) {
+    if (!confirm(`Удалить игрока «${player.name}»?`)) {
+        return;
+    }
+
+    try {
+        await apiRequest(`/players/${encodeURIComponent(player.id)}`, {
+            method: 'DELETE'
+        });
+
+        await loadData();
+    }
+    catch (error) {
+        alert(error.message);
+    }
+}
+
+async function editTournament(tournament) {
+    const name = prompt('Новое название турнира:', tournament.name);
+
+    if (name === null) {
+        return;
+    }
+
+    const trimmedName = name.trim();
+
+    if (!trimmedName) {
+        alert('Название турнира не может быть пустым.');
+        return;
+    }
+
+    try {
+        await apiRequest(`/tournaments/${encodeURIComponent(tournament.id)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: trimmedName })
+        });
+
+        await loadData();
+    }
+    catch (error) {
+        alert(error.message);
+    }
+}
+
+async function deleteTournament(tournament) {
+    if (!confirm(`Удалить турнир «${tournament.name}»?`)) {
+        return;
+    }
+
+    try {
+        await apiRequest(`/tournaments/${encodeURIComponent(tournament.id)}`, {
+            method: 'DELETE'
+        });
+
+        await loadData();
+    }
+    catch (error) {
+        alert(error.message);
+    }
+}
+
+async function editResult(result) {
+    const updatedPlayers = [];
+
+    for (const player of players) {
+        const existing = result.players.find(
+            item => item.playerId === player.id
+        );
+
+        const value = prompt(
+            `Результат игрока «${player.name}». Оставьте пустым, если игрок не участвовал:`,
+            existing ? existing.result : ''
+        );
+
+        if (value === null) {
+            return;
         }
+
+        const trimmedValue = value.trim();
+
+        if (trimmedValue) {
+            updatedPlayers.push({
+                playerId: player.id,
+                result: trimmedValue
+            });
+        }
+    }
+
+    if (updatedPlayers.length === 0) {
+        alert('Укажите результат хотя бы одного игрока.');
+        return;
+    }
+
+    try {
+        await apiRequest('/results', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                tournamentId: result.tournamentId,
+                year: result.year,
+                players: updatedPlayers
+            })
+        });
+
+        await loadData();
+    }
+    catch (error) {
+        alert(error.message);
+    }
+}
+
+async function deleteResult(result) {
+    const tournamentName = getTournamentName(result.tournamentId);
+
+    if (!confirm(`Удалить результат «${tournamentName} (${result.year})»?`)) {
+        return;
+    }
+
+    try {
+        await apiRequest('/results', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                tournamentId: result.tournamentId,
+                year: result.year
+            })
+        });
 
         await loadData();
     }

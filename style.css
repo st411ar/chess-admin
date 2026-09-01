@@ -27,6 +27,24 @@ th {
     background-color: #f0f0f0;
 }
 
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+button {
+    cursor: pointer;
+}
+
+.action-button {
+    padding: 5px 10px;
+}
+
+.delete-button {
+    color: #a40000;
+}
+
 .result-card {
     border: 1px solid #cccccc;
     padding: 12px;
@@ -35,6 +53,10 @@ th {
 
 .result-card h3 {
     margin-top: 0;
+}
+
+.result-card ul {
+    margin-bottom: 10px;
 }
 
 .form-block {
