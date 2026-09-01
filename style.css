@@ -39,13 +39,79 @@ th {
 
 .form-block {
     margin-top: 16px;
+    padding: 16px;
+    border: 1px solid #dddddd;
+    background-color: #fafafa;
 }
 
-.form-block input {
-    padding: 6px;
+.form-block h3 {
+    margin-top: 0;
+}
+
+.form-block input,
+.form-block select {
+    padding: 7px;
     margin-right: 8px;
 }
 
 .form-block button {
-    padding: 6px 12px;
+    padding: 7px 14px;
+    margin-top: 12px;
+}
+
+.result-form-fields {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.player-results {
+    display: grid;
+    gap: 8px;
+}
+
+.player-result-row {
+    display: grid;
+    grid-template-columns: minmax(140px, 220px) minmax(140px, 240px);
+    align-items: center;
+    gap: 12px;
+}
+
+.player-result-row input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.empty-message {
+    color: #666666;
+}
+
+@media (max-width: 600px) {
+    body {
+        margin: 12px;
+    }
+
+    .form-block input,
+    .form-block select {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        margin: 0 0 8px;
+    }
+
+    .result-form-fields {
+        display: block;
+    }
+
+    .result-form-fields label {
+        display: block;
+        margin: 8px 0 4px;
+    }
+
+    .player-result-row {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
 }

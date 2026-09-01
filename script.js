@@ -5,44 +5,55 @@ let players = [];
 let tournaments = [];
 let results = [];
 
+async function apiRequest(path, options = {}) {
+    const response = await fetch(`${API_URL}${path}`, options);
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || `HTTP error ${response.status}`);
+    }
+
+    return data;
+}
+
 async function loadData() {
+    try {
+        [players, tournaments, results] = await Promise.all([
+            apiRequest('/players'),
+            apiRequest('/tournaments'),
+            apiRequest('/results')
+        ]);
 
-    const [
-        playersResponse,
-        tournamentsResponse,
-        resultsResponse
-    ] = await Promise.all([
-        fetch(`${API_URL}/players`),
-        fetch(`${API_URL}/tournaments`),
-        fetch(`${API_URL}/results`)
-    ]);
+        renderPlayers();
+        renderTournaments();
+        renderResults();
+        renderResultForm();
+    }
+    catch (error) {
+        alert(`Не удалось загрузить данные: ${error.message}`);
+    }
+}
 
-    players = await playersResponse.json();
-    tournaments = await tournamentsResponse.json();
-    results = await resultsResponse.json();
-
-    renderPlayers();
-    renderTournaments();
-    renderResults();
+function escapeHtml(value) {
+    return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
 }
 
 function renderPlayers() {
-
-    const tbody =
-        document.querySelector(
-            '#playersTable tbody'
-        );
-
+    const tbody = document.querySelector('#playersTable tbody');
     tbody.innerHTML = '';
 
     for (const player of players) {
-
         tbody.insertAdjacentHTML(
             'beforeend',
             `
             <tr>
-                <td>${player.id}</td>
-                <td>${player.name}</td>
+                <td>${escapeHtml(player.id)}</td>
+                <td>${escapeHtml(player.name)}</td>
             </tr>
             `
         );
@@ -50,22 +61,16 @@ function renderPlayers() {
 }
 
 function renderTournaments() {
-
-    const tbody =
-        document.querySelector(
-            '#tournamentsTable tbody'
-        );
-
+    const tbody = document.querySelector('#tournamentsTable tbody');
     tbody.innerHTML = '';
 
     for (const tournament of tournaments) {
-
         tbody.insertAdjacentHTML(
             'beforeend',
             `
             <tr>
-                <td>${tournament.id}</td>
-                <td>${tournament.name}</td>
+                <td>${escapeHtml(tournament.id)}</td>
+                <td>${escapeHtml(tournament.name)}</td>
             </tr>
             `
         );
@@ -73,171 +78,233 @@ function renderTournaments() {
 }
 
 function getPlayerName(playerId) {
+    const player = players.find(
+        item => item.id === playerId
+    );
 
-    const player =
-        players.find(
-            p => p.id === playerId
-        );
-
-    return player
-        ? player.name
-        : playerId;
+    return player ? player.name : playerId;
 }
 
 function getTournamentName(tournamentId) {
+    const tournament = tournaments.find(
+        item => item.id === tournamentId
+    );
 
-    const tournament =
-        tournaments.find(
-            t => t.id === tournamentId
-        );
-
-    return tournament
-        ? tournament.name
-        : tournamentId;
+    return tournament ? tournament.name : tournamentId;
 }
 
 function renderResults() {
-
-    const container =
-        document.getElementById(
-            'resultsContainer'
-        );
-
+    const container = document.getElementById('resultsContainer');
     container.innerHTML = '';
 
+    if (results.length === 0) {
+        container.innerHTML = '<p class="empty-message">Результатов пока нет.</p>';
+        return;
+    }
+
     for (const result of results) {
-
-        let playersHtml = '';
-
-        for (const player of result.players) {
-
-            playersHtml += `
+        const playersHtml = result.players
+            .map(player => `
                 <li>
-                    ${getPlayerName(player.playerId)}
+                    ${escapeHtml(getPlayerName(player.playerId))}
                     —
-                    ${player.result}
+                    ${escapeHtml(player.result)}
                 </li>
-            `;
-        }
+            `)
+            .join('');
 
         container.insertAdjacentHTML(
             'beforeend',
             `
             <div class="result-card">
-
                 <h3>
-                    ${getTournamentName(result.tournamentId)}
-                    (${result.year})
+                    ${escapeHtml(getTournamentName(result.tournamentId))}
+                    (${escapeHtml(result.year)})
                 </h3>
-
-                <ul>
-                    ${playersHtml}
-                </ul>
-
+                <ul>${playersHtml}</ul>
             </div>
             `
         );
     }
 }
 
-async function addPlayer() {
+function renderResultForm() {
+    const tournamentSelect = document.getElementById('resultTournamentId');
+    const playersContainer = document.getElementById('resultPlayersFields');
 
-    const id =
-        document.getElementById(
-            'playerId'
-        ).value.trim();
+    const selectedTournamentId = tournamentSelect.value;
 
-    const name =
-        document.getElementById(
-            'playerName'
-        ).value.trim();
+    tournamentSelect.innerHTML = '';
 
-    if (!id || !name) {
-        alert('Заполните все поля');
+    if (tournaments.length === 0) {
+        tournamentSelect.innerHTML = '<option value="">Сначала добавьте турнир</option>';
+        tournamentSelect.disabled = true;
+    }
+    else {
+        tournamentSelect.disabled = false;
+
+        for (const tournament of tournaments) {
+            const option = document.createElement('option');
+            option.value = tournament.id;
+            option.textContent = tournament.name;
+            tournamentSelect.appendChild(option);
+        }
+
+        if (tournaments.some(item => item.id === selectedTournamentId)) {
+            tournamentSelect.value = selectedTournamentId;
+        }
+    }
+
+    playersContainer.innerHTML = '';
+
+    if (players.length === 0) {
+        playersContainer.innerHTML = '<p class="empty-message">Сначала добавьте игроков.</p>';
         return;
     }
 
-    const response = await fetch(
-        `${API_URL}/players`,
-        {
+    for (const player of players) {
+        const row = document.createElement('div');
+        row.className = 'player-result-row';
+
+        const label = document.createElement('label');
+        label.htmlFor = `result-player-${player.id}`;
+        label.textContent = player.name;
+
+        const input = document.createElement('input');
+        input.id = `result-player-${player.id}`;
+        input.type = 'text';
+        input.placeholder = 'Место или результат';
+        input.dataset.playerId = player.id;
+
+        row.append(label, input);
+        playersContainer.appendChild(row);
+    }
+}
+
+async function addPlayer() {
+    const idInput = document.getElementById('playerId');
+    const nameInput = document.getElementById('playerName');
+
+    const id = idInput.value.trim();
+    const name = nameInput.value.trim();
+
+    if (!id || !name) {
+        alert('Заполните ID и имя игрока.');
+        return;
+    }
+
+    try {
+        await apiRequest('/players', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                id,
-                name
-            })
-        }
-    );
+            body: JSON.stringify({ id, name })
+        });
 
-    const result =
-        await response.json();
+        idInput.value = '';
+        nameInput.value = '';
 
-    if (!response.ok) {
-        alert(result.error);
-        return;
+        await loadData();
     }
-
-    document.getElementById(
-        'playerId'
-    ).value = '';
-
-    document.getElementById(
-        'playerName'
-    ).value = '';
-
-    await loadData();
+    catch (error) {
+        alert(error.message);
+    }
 }
 
 async function addTournament() {
+    const idInput = document.getElementById('tournamentId');
+    const nameInput = document.getElementById('tournamentName');
 
-    const id =
-        document.getElementById(
-            'tournamentId'
-        ).value.trim();
-
-    const name =
-        document.getElementById(
-            'tournamentName'
-        ).value.trim();
+    const id = idInput.value.trim();
+    const name = nameInput.value.trim();
 
     if (!id || !name) {
-        alert('Заполните все поля');
+        alert('Заполните ID и название турнира.');
         return;
     }
 
-    const response = await fetch(
-        `${API_URL}/tournaments`,
-        {
+    try {
+        await apiRequest('/tournaments', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id, name })
+        });
+
+        idInput.value = '';
+        nameInput.value = '';
+
+        await loadData();
+    }
+    catch (error) {
+        alert(error.message);
+    }
+}
+
+async function addResult() {
+    const tournamentId = document
+        .getElementById('resultTournamentId')
+        .value;
+
+    const yearValue = document
+        .getElementById('resultYear')
+        .value
+        .trim();
+
+    const year = Number(yearValue);
+
+    const playerResults = [...document.querySelectorAll(
+        '#resultPlayersFields input[data-player-id]'
+    )]
+        .map(input => ({
+            playerId: input.dataset.playerId,
+            result: input.value.trim()
+        }))
+        .filter(item => item.result !== '');
+
+    if (!tournamentId) {
+        alert('Выберите турнир.');
+        return;
+    }
+
+    if (!Number.isInteger(year) || year <= 0) {
+        alert('Укажите корректный год.');
+        return;
+    }
+
+    if (playerResults.length === 0) {
+        alert('Укажите результат хотя бы одного игрока.');
+        return;
+    }
+
+    try {
+        await apiRequest('/results', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                id,
-                name
+                tournamentId,
+                year,
+                players: playerResults
             })
+        });
+
+        document.getElementById('resultYear').value = '';
+
+        for (const input of document.querySelectorAll(
+            '#resultPlayersFields input[data-player-id]'
+        )) {
+            input.value = '';
         }
-    );
 
-    const result =
-        await response.json();
-
-    if (!response.ok) {
-        alert(result.error);
-        return;
+        await loadData();
     }
-
-    document.getElementById(
-        'tournamentId'
-    ).value = '';
-
-    document.getElementById(
-        'tournamentName'
-    ).value = '';
-
-    await loadData();
+    catch (error) {
+        alert(error.message);
+    }
 }
 
 loadData();

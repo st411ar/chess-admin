@@ -61,7 +61,26 @@
 
     <section>
         <h2>Результаты</h2>
+
         <div id="resultsContainer"></div>
+
+        <div class="form-block">
+            <h3>Добавить результат турнира</h3>
+
+            <div class="result-form-fields">
+                <label for="resultTournamentId">Турнир</label>
+                <select id="resultTournamentId"></select>
+
+                <label for="resultYear">Год</label>
+                <input id="resultYear" type="number" min="1" step="1" placeholder="2026">
+            </div>
+
+            <div id="resultPlayersFields" class="player-results"></div>
+
+            <button type="button" onclick="addResult()">
+                Добавить результат
+            </button>
+        </div>
     </section>
 
     <script src="script.js"></script>
