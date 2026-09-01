@@ -39,6 +39,7 @@
                 <tr>
                     <th>ID</th>
                     <th>Название</th>
+                    <th>Формат</th>
                     <th>Действия</th>
                 </tr>
             </thead>
@@ -49,6 +50,11 @@
             <h3>Добавить турнир</h3>
             <input id="tournamentId" type="text" placeholder="ID">
             <input id="tournamentName" type="text" placeholder="Название">
+            <select id="tournamentFormat" aria-label="Формат турнира">
+                <option value="standings">Итоговая таблица</option>
+                <option value="knockout">Нокаут</option>
+                <option value="match">Матч</option>
+            </select>
             <button type="button" onclick="addTournament()">Добавить турнир</button>
         </div>
     </section>

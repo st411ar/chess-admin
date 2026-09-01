@@ -75,10 +75,12 @@ function renderTournaments() {
         const row = document.createElement('tr');
         const idCell = document.createElement('td');
         const nameCell = document.createElement('td');
+        const formatCell = document.createElement('td');
         const actionsCell = document.createElement('td');
 
         idCell.textContent = tournament.id;
         nameCell.textContent = tournament.name;
+        formatCell.textContent = getTournamentFormatName(tournament.format);
         actionsCell.className = 'actions';
 
         actionsCell.append(
@@ -86,9 +88,19 @@ function renderTournaments() {
             createActionButton('Удалить', 'delete-button', () => deleteTournament(tournament))
         );
 
-        row.append(idCell, nameCell, actionsCell);
+        row.append(idCell, nameCell, formatCell, actionsCell);
         tbody.appendChild(row);
     }
+}
+
+function getTournamentFormatName(format) {
+    const names = {
+        standings: 'Итоговая таблица',
+        knockout: 'Нокаут',
+        match: 'Матч'
+    };
+
+    return names[format] || format || 'Не указан';
 }
 
 function getPlayerName(playerId) {
@@ -226,11 +238,13 @@ async function addPlayer() {
 async function addTournament() {
     const idInput = document.getElementById('tournamentId');
     const nameInput = document.getElementById('tournamentName');
+    const formatInput = document.getElementById('tournamentFormat');
     const id = idInput.value.trim();
     const name = nameInput.value.trim();
+    const format = formatInput.value;
 
-    if (!id || !name) {
-        alert('Заполните ID и название турнира.');
+    if (!id || !name || !format) {
+        alert('Заполните ID, название и формат турнира.');
         return;
     }
 
@@ -238,11 +252,12 @@ async function addTournament() {
         await apiRequest('/tournaments', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id, name })
+            body: JSON.stringify({ id, name, format })
         });
 
         idInput.value = '';
         nameInput.value = '';
+        formatInput.value = 'standings';
         await loadData();
     }
     catch (error) {
@@ -360,11 +375,30 @@ async function editTournament(tournament) {
         return;
     }
 
+    const format = prompt(
+        'Новый формат: standings, knockout или match',
+        tournament.format || 'standings'
+    );
+
+    if (format === null) {
+        return;
+    }
+
+    const trimmedFormat = format.trim();
+
+    if (!['standings', 'knockout', 'match'].includes(trimmedFormat)) {
+        alert('Формат должен быть standings, knockout или match.');
+        return;
+    }
+
     try {
         await apiRequest(`/tournaments/${encodeURIComponent(tournament.id)}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: trimmedName })
+            body: JSON.stringify({
+                name: trimmedName,
+                format: trimmedFormat
+            })
         });
 
         await loadData();
