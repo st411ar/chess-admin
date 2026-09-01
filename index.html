@@ -1,16 +1,12 @@
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chess Admin</title>
-
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
     <h1>Chess Admin</h1>
 
     <section>
@@ -25,6 +21,17 @@
             </thead>
             <tbody></tbody>
         </table>
+
+        <div class="form-block">
+            <h3>Добавить игрока</h3>
+
+            <input id="playerId" type="text" placeholder="ID">
+            <input id="playerName" type="text" placeholder="Имя">
+
+            <button type="button" onclick="addPlayer()">
+                Добавить игрока
+            </button>
+        </div>
     </section>
 
     <section>
@@ -39,16 +46,24 @@
             </thead>
             <tbody></tbody>
         </table>
+
+        <div class="form-block">
+            <h3>Добавить турнир</h3>
+
+            <input id="tournamentId" type="text" placeholder="ID">
+            <input id="tournamentName" type="text" placeholder="Название">
+
+            <button type="button" onclick="addTournament()">
+                Добавить турнир
+            </button>
+        </div>
     </section>
 
     <section>
         <h2>Результаты</h2>
-
         <div id="resultsContainer"></div>
     </section>
 
     <script src="script.js"></script>
-
 </body>
-
 </html>

@@ -1,4 +1,5 @@
-const API_URL = 'https://chess-api-production-4ee5.up.railway.app';
+const API_URL =
+    'https://chess-api-production-4ee5.up.railway.app';
 
 let players = [];
 let tournaments = [];
@@ -137,6 +138,106 @@ function renderResults() {
             `
         );
     }
+}
+
+async function addPlayer() {
+
+    const id =
+        document.getElementById(
+            'playerId'
+        ).value.trim();
+
+    const name =
+        document.getElementById(
+            'playerName'
+        ).value.trim();
+
+    if (!id || !name) {
+        alert('Заполните все поля');
+        return;
+    }
+
+    const response = await fetch(
+        `${API_URL}/players`,
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id,
+                name
+            })
+        }
+    );
+
+    const result =
+        await response.json();
+
+    if (!response.ok) {
+        alert(result.error);
+        return;
+    }
+
+    document.getElementById(
+        'playerId'
+    ).value = '';
+
+    document.getElementById(
+        'playerName'
+    ).value = '';
+
+    await loadData();
+}
+
+async function addTournament() {
+
+    const id =
+        document.getElementById(
+            'tournamentId'
+        ).value.trim();
+
+    const name =
+        document.getElementById(
+            'tournamentName'
+        ).value.trim();
+
+    if (!id || !name) {
+        alert('Заполните все поля');
+        return;
+    }
+
+    const response = await fetch(
+        `${API_URL}/tournaments`,
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id,
+                name
+            })
+        }
+    );
+
+    const result =
+        await response.json();
+
+    if (!response.ok) {
+        alert(result.error);
+        return;
+    }
+
+    document.getElementById(
+        'tournamentId'
+    ).value = '';
+
+    document.getElementById(
+        'tournamentName'
+    ).value = '';
+
+    await loadData();
 }
 
 loadData();
